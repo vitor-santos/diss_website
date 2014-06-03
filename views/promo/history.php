@@ -38,7 +38,7 @@
 						</tr>
 						<tr>
 							<th>Vouchers Vendidos</th>
-							<td>To be Done</td>
+							<td><?php echo $p['sold_vouchers'];?></td>
 						</tr>
 					</table>
 				</div>

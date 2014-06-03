@@ -223,8 +223,14 @@ class Promo extends CI_Controller {
 		{
 				$result=$this->promomodel->validateVoucher();
 				$this->load->view('/template/header');
-				if($result) $this->load->view('/promo/validate_success');
+				
+				if(!is_null($result)) 
+				{
+					$data['voucherinfo']=$result;
+					$this->load->view('/promo/validate_success',$data);
+				}				
 				else $this->load->view('/promo/validate_fail');
+				
 				$this->load->view('/template/footer');
 		}
 	}

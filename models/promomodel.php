@@ -58,6 +58,11 @@ class PromoModel extends CI_Model {
 	
 	public function getPromoById($id)
 	{
+		$sql2 = "SELECT COUNT(id_promo) AS c FROM voucher WHERE id_promo=?";
+		$query3=$this->db->query($sql2, $id);
+		$row2 = $query3->row_array();
+		$count=$row2['c'];			
+			
 		$query=$this->db->get_where('promo', array('id_promo' => $id));
 		if($query->num_rows()>0)
 		{
@@ -68,7 +73,6 @@ class PromoModel extends CI_Model {
 					$row = $query2->row_array();
 					$cat=$row['nome'];
 					
-				
 					$promo = array(
 					  'desc_completa'  => $rows->desc_completa,
 					  'inicio_promo'  => $rows->inicio_promo,
@@ -88,7 +92,8 @@ class PromoModel extends CI_Model {
 					  'bilhete'    => $rows->bilhete,
 					  'hora_criacao'	=> $rows->hora_criacao,
 					  'categoria'    => $cat,
-					  'zonas'    => $rows->zonas		  
+					  'zonas'    => $rows->zonas,
+					  'sold_vouchers'=> $count
 					);	
 			}
 		}
@@ -252,9 +257,44 @@ class PromoModel extends CI_Model {
 	
 	public function validateVoucher()
 	{
-		//Check session
-		//Receive and validate voucher
-		return false; //Tá a dar erro
+		$user=$this->session->userdata('id_entidade');
+		
+		$query = $this->db->get_where('voucher', array('chave_validacao' => $this->input->post('code')));
+		$data=array();
+		
+		if($query->num_rows()>0)
+		{
+			foreach($query->result() as $rows)
+			{				
+				$promo=$this->getPromoById($rows->id_promo);
+				
+				$hoje=new DateTime();				
+				
+				$date=new DateTime($promo['fim_promo']);				
+				$dDiff=$hoje->diff($date);
+				$dDiff =(int)$dDiff->format("%r%a"); //Verificar se está a validar um voucher para uma data expirada
+				
+				$hoje=$hoje->format('Y-m-d');
+				
+				if($promo['id_entidade']!=$user || $rows->estado==1 || $dDiff<0) return NULL;
+				
+				else
+				{
+					$data=array(
+						'email'=>$rows->email,
+						'desc_resumida'=>$promo['desc_resumida']
+					);					
+					
+					$this->db->where('id_voucher', $rows->id_voucher);
+					$this->db->update('voucher', array('estado'=>1,'data_validacao'=>$hoje));	
+					
+					return $data;
+				}				
+			}
+			
+		}
+		
+		else return NULL;		
 	}
 	
 	
